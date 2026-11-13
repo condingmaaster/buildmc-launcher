@@ -8,4 +8,4 @@ rust-edition/
 bhh/
 release/
 *.zip
-src-tauri/rust-editions/
+src-tauri/rust-editions/*/
