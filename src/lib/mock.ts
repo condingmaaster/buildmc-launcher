@@ -432,6 +432,7 @@ const handlers: Record<string, (a: any) => unknown> = {
   save_config: () => undefined,
   get_running_instances: () => RUNNING,
 
+  launch_in_official_launcher: () => "Das Profil liegt im Minecraft-Launcher bereit. Dort auf „Spielen“ drücken.",
   launch_instance: ({ instanceId }: { instanceId: string }) => {
     if (!RUNNING.some((r) => r.instance_id === instanceId)) {
       RUNNING = [...RUNNING, {

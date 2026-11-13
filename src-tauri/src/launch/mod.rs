@@ -3,6 +3,7 @@
 pub mod args;
 pub mod diagnose;
 pub mod install;
+pub mod official;
 pub mod process;
 pub mod telemetry;
 

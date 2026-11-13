@@ -100,6 +100,8 @@ export const launch = {
       --server/--port). */
   start:   (instanceId: string, join: JoinTarget = { kind: "none" }) =>
              call<void>("launch_instance", { instanceId, join }),                    // 0.1.3 (erweitert)
+  /** Legt die Instanz als Profil im offiziellen Minecraft-Launcher an und öffnet ihn. */
+  official: (instanceId: string) => call<string>("launch_in_official_launcher", { instanceId }),
   stop:    (instanceId: string) => call<void>("stop_instance", { instanceId }),      // 0.1.3
   running: () => call<RunningInstance[]>("get_running_instances"),                   // 0.1.3
   log:     (instanceId: string) => call<string[]>("get_launch_log", { instanceId }), // 0.1.3

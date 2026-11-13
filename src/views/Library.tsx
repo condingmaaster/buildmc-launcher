@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useApp } from "../lib/store";
+import * as api from "../lib/api";
 import { Icon } from "../components/Icon";
 import { Badge, Button, Segmented, Empty } from "../components/ui";
 import { LOADER_LABEL, ago, num, playtime } from "../lib/format";
@@ -16,6 +17,16 @@ export function Library() {
   const go = useApp((s) => s.go);
   const startInstance = useApp((s) => s.startInstance);
   const stopInstance = useApp((s) => s.stopInstance);
+  const notify = useApp((s) => s.notify);
+
+  /* Statt selbst zu starten: Profil im offiziellen Minecraft-Launcher anlegen und ihn öffnen. */
+  async function official(inst: Instance) {
+    try {
+      notify({ kind: "ok", title: `${inst.name}: Minecraft-Launcher`, detail: await api.launch.official(inst.id) });
+    } catch (e) {
+      notify({ kind: "risk", title: "Übergabe fehlgeschlagen", detail: String(e) });
+    }
+  }
 
   const [focusId, setFocusId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
@@ -82,6 +93,7 @@ export function Library() {
             joinOpen={joinOpen}
             onJoinOpen={setJoinOpen}
             onPlay={play}
+            onOfficial={official}
             onOpen={() => go({ name: "instance", id: focus.id })}
           />
         )}
@@ -178,10 +190,10 @@ function TopBar({ query, onQuery, sort, onSort, count, onCreate }: {
 
 /* ---- Buehne ---------------------------------------------------------- */
 
-function Stage({ inst, running, launching, joinOpen, onJoinOpen, onPlay, onOpen }: {
+function Stage({ inst, running, launching, joinOpen, onJoinOpen, onPlay, onOfficial, onOpen }: {
   inst: Instance; running: boolean; launching: boolean;
   joinOpen: boolean; onJoinOpen: (v: boolean) => void;
-  onPlay: (i: Instance, j?: JoinTarget) => void; onOpen: () => void;
+  onPlay: (i: Instance, j?: JoinTarget) => void; onOfficial: (i: Instance) => void; onOpen: () => void;
 }) {
   const playBox = useRef<HTMLDivElement>(null);
   return (
@@ -238,6 +250,12 @@ function Stage({ inst, running, launching, joinOpen, onJoinOpen, onPlay, onOpen 
               />
             )}
           </div>
+
+          {!running && (
+            <Button tone="outline" size="lg" icon="play" onClick={() => onOfficial(inst)}>
+              Im Minecraft-Launcher
+            </Button>
+          )}
 
           <Button tone="outline" size="lg" icon="gear" onClick={onOpen}>
             Verwalten

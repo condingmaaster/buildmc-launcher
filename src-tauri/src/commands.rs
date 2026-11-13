@@ -136,6 +136,18 @@ pub async fn launch_instance(
     .await
 }
 
+/// Legt die Instanz als Profil im offiziellen Minecraft-Launcher an und öffnet ihn.
+#[tauri::command]
+pub async fn launch_in_official_launcher(instance_id: String) -> Result<String> {
+    let instance = crate::instance::load(&instance_id)?;
+    crate::launch::official::install_profile(&instance).await?;
+    Ok(if crate::launch::official::open_launcher() {
+        "Das Profil liegt im Minecraft-Launcher bereit. Dort auf „Spielen“ drücken.".to_string()
+    } else {
+        "Das Profil ist angelegt. Öffne den Minecraft-Launcher selbst und wähle es aus.".to_string()
+    })
+}
+
 #[tauri::command]
 pub fn stop_instance(instance_id: String) -> Result<()> {
     crate::launch::stop(&instance_id)

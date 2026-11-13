@@ -73,6 +73,7 @@ pub fn run() {
             commands::check_java_path,
             // Starten
             commands::launch_instance,
+            commands::launch_in_official_launcher,
             commands::stop_instance,
             commands::get_running_instances,
             commands::get_launch_log,
