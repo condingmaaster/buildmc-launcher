@@ -1,0 +1,47 @@
+name: Build installers
+
+# Builds the BuildMC Launcher: Windows 11 (NSIS .exe and WiX .msi) and Linux (.deb) and attaches them to a GitHub release.
+# Start: push a tag like v0.4.3, or Actions -> Run workflow (then the files appear as workflow artifacts and in a draft release).
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            args: --bundles nsis,msi
+          - os: ubuntu-22.04
+            args: --bundles deb
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Linux build dependencies
+        if: matrix.os == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libssl-dev libgtk-3-dev
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - run: npm ci
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_type == 'tag' && github.ref_name || 'v0.4.3' }}
+          releaseName: BuildMC Launcher v0.4.3
+          releaseDraft: ${{ github.ref_type != 'tag' }}
+          args: ${{ matrix.args }}

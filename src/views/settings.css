@@ -1,0 +1,117 @@
+@import "./shared.css";
+
+.set { flex: 1; }
+
+.set__h {
+  font-size: var(--t-sm);
+  font-weight: 640;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-top: var(--s-3);
+}
+.set__h:first-child { margin-top: 0; }
+
+.set__note { font-size: var(--t-xs); color: var(--ink-faint); line-height: 1.55; }
+
+.setrow {
+  display: flex; align-items: center; gap: var(--s-4);
+  padding: var(--s-3) 0;
+  border-bottom: 1px solid var(--line);
+}
+.setrow:last-child { border-bottom: none; }
+.setrow__text { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.setrow__label { font-size: var(--t-sm); }
+
+.acc__face {
+  flex: none;
+  display: grid; place-items: center;
+  width: 38px; height: 38px;
+  border-radius: var(--r-md);
+  font-size: var(--t-md); font-weight: 700;
+  color: var(--accent-ink);
+  background: linear-gradient(140deg, var(--accent), var(--accent-dim));
+}
+
+.acc.is-active { border-color: var(--accent-edge); background: var(--accent-wash); }
+
+.acc__add { display: flex; gap: var(--s-2); }
+
+.cf__key {
+  margin: var(--s-2) 0 var(--s-4);
+  padding: var(--s-3);
+  background: var(--bg-sunken);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+}
+.cf__key-row { display: flex; gap: var(--s-2); }
+.cf__key-row .input { flex: 1; }
+.cf__key a { color: var(--accent-bright); }
+
+.acc__offline { display: flex; gap: var(--s-3); align-items: flex-start; }
+.acc__offline .input { max-width: 260px; }
+
+.swatches { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+
+.swatch {
+  width: 34px; height: 34px;
+  border-radius: var(--r-md);
+  border: 2px solid transparent;
+  box-shadow: inset 0 0 0 1px hsl(0 0% 0% / 0.28);
+  transition: transform var(--d-fast) var(--ease-spring),
+              border-color var(--d-fast) var(--ease-out);
+}
+.swatch:hover { transform: scale(1.1); }
+.swatch.is-on {
+  border-color: var(--ink);
+  transform: scale(1.12);
+}
+
+.swatch--pick { padding: 0; background: none; cursor: pointer; }
+
+.set__warn {
+  display: flex; align-items: flex-start; gap: var(--s-2);
+  padding: var(--s-3) var(--s-4);
+  border-radius: var(--r-md);
+  background: var(--warn-wash);
+  border-left: 3px solid var(--warn);
+  font-size: var(--t-sm);
+  color: var(--ink-muted);
+  line-height: 1.55;
+}
+.set__warn > svg { color: var(--warn); flex: none; margin-top: 2px; }
+.set__warn strong { color: var(--ink); font-family: var(--mono); font-size: var(--t-xs); }
+
+/* Microsoft-Geraetecode -- der Knopf holte bisher nur den Code und warf
+   ihn weg. Ohne Anzeige und ohne Nachfragen kam nie ein Konto zustande. */
+.dev {
+  position: absolute; inset: 0; margin: auto;
+  width: min(420px, 92vw); max-height: 92vh;
+  display: flex; flex-direction: column; gap: var(--s-3);
+  padding: var(--s-5);
+  background: var(--bg-surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-lg);
+  box-shadow: var(--z-4);
+  animation: sheetIn var(--d-slow) var(--ease-out) both;
+}
+
+.dev__code {
+  display: flex; align-items: center; justify-content: center; gap: var(--s-2);
+  padding: var(--s-4);
+  font-size: var(--t-2xl); font-weight: 700; letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  background: var(--bg-sunken);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--r-md);
+  cursor: pointer;
+}
+.dev__code:hover { border-color: var(--accent-edge); }
+
+.dev__wait, .dev__err {
+  display: flex; align-items: center; gap: var(--s-2);
+  font-size: var(--t-sm);
+}
+.dev__wait { color: var(--ink-muted); }
+.dev__err { color: var(--risk); }

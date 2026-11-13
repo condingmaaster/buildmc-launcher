@@ -1,0 +1,125 @@
+/* =========================================================================
+   BuildMC Launcher — Design-Tokens
+   Eine einzige Quelle der Wahrheit fuer Farbe, Flaeche, Raum und Bewegung.
+   Akzent und Grundhelligkeit sind zur Laufzeit ueberschreibbar und werden
+   aus config.json gespeist (accent_color, background_shade, theme).
+   ========================================================================= */
+
+:root {
+  /* ---- Akzent: die einzige Farbe, die der Nutzer waehlt -------------- */
+  --accent-h: 265;
+  --accent-s: 89%;
+  --accent-l: 63%;
+
+  --accent:        hsl(var(--accent-h) var(--accent-s) var(--accent-l));
+  --accent-bright: hsl(var(--accent-h) var(--accent-s) 72%);
+  --accent-dim:    hsl(var(--accent-h) calc(var(--accent-s) - 25%) 42%);
+  --accent-ink:    hsl(var(--accent-h) 100% 96%);
+
+  /* Flaechen aus dem Akzent abgeleitet: alles bleibt farblich verwandt */
+  --accent-wash:   hsl(var(--accent-h) var(--accent-s) var(--accent-l) / 0.11);
+  --accent-edge:   hsl(var(--accent-h) var(--accent-s) var(--accent-l) / 0.34);
+  --accent-glow:   hsl(var(--accent-h) var(--accent-s) var(--accent-l) / 0.45);
+
+  /* ---- Grundflaeche: kein reines Schwarz, leicht zum Akzent gekippt --
+     --shade (0..100) kommt aus config.background_shade                  */
+  --shade: 8;
+  --base-h: calc(var(--accent-h) - 12);
+
+  --bg-void:    hsl(var(--base-h) 24% calc(2.5% + var(--shade) * 0.035%));
+  --bg-sunken:  hsl(var(--base-h) 22% calc(5%   + var(--shade) * 0.045%));
+  --bg-surface: hsl(var(--base-h) 20% calc(8%   + var(--shade) * 0.05%));
+  --bg-raised:  hsl(var(--base-h) 18% calc(11%  + var(--shade) * 0.055%));
+  --bg-overlay: hsl(var(--base-h) 22% calc(13%  + var(--shade) * 0.05%));
+
+  /* Glas: halbtransparent, damit die Verlaeufe darunter durchscheinen */
+  --glass:        hsl(var(--base-h) 24% 14% / 0.62);
+  --glass-strong: hsl(var(--base-h) 26% 11% / 0.86);
+  --glass-blur:   saturate(150%) blur(22px);
+
+  /* ---- Linien ------------------------------------------------------- */
+  --line:        hsl(var(--base-h) 16% 100% / 0.075);
+  --line-strong: hsl(var(--base-h) 16% 100% / 0.14);
+
+  /* ---- Text: Hierarchie ueber Deckkraft, nicht ueber Grauwerte ------- */
+  --ink:       hsl(var(--base-h) 28% 97%);
+  --ink-muted: hsl(var(--base-h) 14% 97% / 0.64);
+  --ink-faint: hsl(var(--base-h) 12% 97% / 0.40);
+
+  /* ---- Signalfarben ------------------------------------------------- */
+  --ok:    hsl(152 62% 50%);
+  --warn:  hsl(38  92% 58%);
+  --risk:  hsl(4   84% 62%);
+  --info:  hsl(205 88% 60%);
+  --ok-wash:   hsl(152 62% 50% / 0.13);
+  --warn-wash: hsl(38  92% 58% / 0.13);
+  --risk-wash: hsl(4   84% 62% / 0.13);
+
+  /* ---- Loader-Signaturfarben --------------------------------------- */
+  --loader-vanilla:  hsl(96  38% 52%);
+  --loader-buildmc:  hsl(var(--accent-h) 84% 64%);
+  --loader-fabric:   hsl(36  74% 62%);
+  --loader-forge:    hsl(220 34% 58%);
+  --loader-neoforge: hsl(24  78% 56%);
+  --loader-quilt:    hsl(288 66% 66%);
+
+  /* ---- Raum: eine Skala, keine Zufallswerte ------------------------ */
+  --s-1: 0.25rem;  --s-2: 0.5rem;   --s-3: 0.75rem;
+  --s-4: 1rem;     --s-5: 1.5rem;   --s-6: 2rem;
+  --s-7: 3rem;     --s-8: 4rem;
+
+  /* ---- Radien ------------------------------------------------------ */
+  --r-sm: 7px;  --r-md: 11px;  --r-lg: 16px;  --r-xl: 22px;  --r-pill: 999px;
+
+  /* ---- Schrift ----------------------------------------------------- */
+  --font: "Inter var", Inter, -apple-system, "Segoe UI", Roboto,
+          "Helvetica Neue", system-ui, sans-serif;
+  --mono: "JetBrains Mono", "SF Mono", ui-monospace, "Cascadia Code",
+          Consolas, monospace;
+
+  --t-2xs: 0.6875rem; --t-xs: 0.75rem;  --t-sm: 0.8125rem;
+  --t-md:  0.9375rem; --t-lg: 1.125rem; --t-xl: 1.5rem;
+  --t-2xl: 2rem;      --t-3xl: 2.75rem;
+
+  /* ---- Tiefe: Schatten UND Akzentschein --------------------------- */
+  --z-1: 0 1px 2px hsl(0 0% 0% / 0.3);
+  --z-2: 0 3px 10px -2px hsl(0 0% 0% / 0.4);
+  --z-3: 0 12px 30px -8px hsl(0 0% 0% / 0.52);
+  --z-4: 0 28px 60px -14px hsl(0 0% 0% / 0.62);
+  --lift: 0 0 0 1px var(--accent-edge), 0 14px 40px -10px var(--accent-glow);
+
+  /* ---- Bewegung: kinetisch heisst federnd, nicht linear ----------- */
+  --ease-out:    cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --d-fast: 130ms;  --d-med: 240ms;  --d-slow: 420ms;  --d-vslow: 800ms;
+
+  --shell-rail: 84px;
+  --shell-head: 58px;
+}
+
+/* Heller Modus: dieselben Tokens, andere Werte. Kein zweites Stylesheet. */
+:root[data-theme="light"] {
+  --bg-void:    hsl(var(--base-h) 30% 97%);
+  --bg-sunken:  hsl(var(--base-h) 26% 94%);
+  --bg-surface: hsl(var(--base-h) 30% 100%);
+  --bg-raised:  hsl(var(--base-h) 24% 98%);
+  --bg-overlay: hsl(var(--base-h) 30% 100%);
+  --glass:        hsl(0 0% 100% / 0.74);
+  --glass-strong: hsl(0 0% 100% / 0.92);
+  --line:        hsl(var(--base-h) 22% 12% / 0.10);
+  --line-strong: hsl(var(--base-h) 22% 12% / 0.20);
+  --ink:       hsl(var(--base-h) 30% 13%);
+  --ink-muted: hsl(var(--base-h) 16% 13% / 0.66);
+  --ink-faint: hsl(var(--base-h) 14% 13% / 0.42);
+  --accent-ink: hsl(var(--accent-h) 100% 98%);
+  --z-3: 0 12px 30px -10px hsl(var(--base-h) 30% 20% / 0.18);
+  --z-4: 0 28px 60px -16px hsl(var(--base-h) 30% 20% / 0.22);
+}
+
+/* Sparsam-Modus: schaltet Zierwerk ab, nicht die Lesbarkeit.
+   Gespeist aus config.performance_mode. */
+:root[data-motion="calm"] {
+  --glass-blur: blur(0px);
+  --d-fast: 0ms; --d-med: 0ms; --d-slow: 0ms; --d-vslow: 0ms;
+}

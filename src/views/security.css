@@ -1,0 +1,61 @@
+@import "./shared.css";
+
+.sec { flex: 1; padding: var(--s-6); max-width: 760px; display: flex; flex-direction: column; gap: var(--s-5); }
+
+.sec__card {
+  padding: var(--s-4);
+  background: var(--bg-surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  display: flex; flex-direction: column; gap: var(--s-3);
+}
+.sec__h { margin: 0; font-size: var(--t-md); font-weight: 700; }
+.sec__note { margin: 0; font-size: var(--t-sm); color: var(--ink-muted); line-height: 1.55; }
+
+.sec__key-row { display: flex; gap: var(--s-2); }
+.sec__key-row .input { flex: 1; }
+
+.sec__install { display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap; }
+.sec__cmd {
+  display: flex; align-items: center; gap: var(--s-2);
+  padding: var(--s-2) var(--s-3);
+  font-size: var(--t-sm);
+  color: var(--ink);
+  background: var(--bg-sunken);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--r-md);
+  cursor: pointer;
+}
+.sec__cmd:hover { border-color: var(--accent-edge); }
+.sec__cmd code { font-family: var(--font-mono, monospace); }
+
+.sec__mode { display: flex; align-items: center; justify-content: space-between; gap: var(--s-3); }
+
+.sec__scan-row { display: flex; gap: var(--s-2); }
+.sec__scan-row select { flex: 1; }
+
+.sec__ok {
+  display: flex; align-items: center; gap: 6px;
+  margin: 0; padding: var(--s-3);
+  font-size: var(--t-sm); color: var(--ok);
+  background: var(--ok-wash); border-radius: var(--r-md);
+}
+
+.sec__hits, .sec__history {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.sec__hits li, .sec__history li {
+  display: flex; align-items: center; gap: var(--s-3);
+  padding: var(--s-2) var(--s-3);
+  background: var(--bg-sunken);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+}
+.sec__hits li svg { color: var(--risk); flex: none; }
+.sec__hits li.is-allowed svg { color: var(--ink-faint); }
+.sec__hits li .mod__id, .sec__history li .mod__id { flex: 1; min-width: 0; }
+
+.sec__history li svg { flex: none; }
+.sec__reason { flex: 1; min-width: 0; font-size: var(--t-xs); color: var(--ink-faint); }
+.sec__when { font-size: var(--t-xs); color: var(--ink-faint); white-space: nowrap; }

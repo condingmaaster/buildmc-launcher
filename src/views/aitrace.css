@@ -1,0 +1,96 @@
+/* Live-Spur eines Modellaufrufs -- rechte Spalte neben Fragen/Auswahl/Plan.
+   Bewusst gedaempft (dunklerer Grund, leiser Text): sie begleitet, draengt
+   sich aber nicht vor den eigentlichen Ablauf. */
+
+.aitrace {
+  /* Bekommt seine Hoehe jetzt vom Elternrahmen (.asst__row, stretch),
+     nicht mehr aus einem geschaetzten calc() -- passt sich so an jede
+     Fensterhoehe genau an, statt zu raten. */
+  width: 320px; flex: none;
+  display: flex; flex-direction: column;
+  min-height: 0;
+  background: var(--bg-sunken);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+
+.aitrace__head {
+  display: flex; align-items: center; gap: var(--s-2);
+  padding: var(--s-3) var(--s-4);
+  font-size: var(--t-xs); font-weight: 600; color: var(--ink-muted);
+  border-bottom: 1px solid var(--line);
+}
+.aitrace__head svg { color: var(--accent-bright); }
+
+.aitrace__pulse {
+  width: 6px; height: 6px; border-radius: 999px;
+  margin-left: auto;
+  background: var(--accent-bright);
+  animation: aitrace-pulse 1.4s ease-in-out infinite;
+}
+@keyframes aitrace-pulse {
+  0%, 100% { opacity: 0.3; transform: scale(0.85); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+.aitrace__body {
+  flex: 1; min-height: 120px;
+  padding: var(--s-3) var(--s-4);
+  display: flex; flex-direction: column; gap: var(--s-3);
+}
+
+.aitrace__wait { font-size: var(--t-xs); color: var(--ink-faint); }
+
+.aitrace__think {
+  margin: 0;
+  font-size: var(--t-xs); font-style: italic; line-height: 1.55;
+  color: var(--ink-faint);
+}
+
+.aitrace__status, .aitrace__done {
+  display: flex; align-items: center; gap: 6px;
+  margin: 0;
+  font-size: var(--t-xs); color: var(--ink-muted);
+}
+.aitrace__status svg { color: var(--ok, #3ecf8e); }
+.aitrace__done { color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+
+.aitrace__retry {
+  display: flex; align-items: flex-start; gap: 6px;
+  margin: 0;
+  padding: 6px var(--s-2);
+  font-size: var(--t-xs); color: var(--risk);
+  background: var(--risk-wash);
+  border-radius: var(--r-sm);
+}
+.aitrace__retry svg { flex: none; margin-top: 2px; }
+
+.aitrace__tool {
+  padding: var(--s-2);
+  background: var(--bg-surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+}
+.aitrace__tool-head {
+  display: flex; align-items: center; gap: 6px;
+  font-size: var(--t-xs); color: var(--ink);
+}
+.aitrace__tool-head svg { color: var(--accent-bright); flex: none; }
+
+.aitrace__hits {
+  list-style: none; margin: var(--s-2) 0 0; padding: 0;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.aitrace__hits button {
+  display: flex; flex-direction: column; gap: 1px;
+  width: 100%; padding: 5px 7px;
+  text-align: left;
+  background: none; border: 1px solid transparent; border-radius: var(--r-sm);
+  cursor: pointer;
+}
+.aitrace__hits button:hover { background: var(--bg-raised); border-color: var(--line); }
+.aitrace__hit-title { font-size: var(--t-xs); color: var(--ink); }
+.aitrace__hit-domain { font-size: 11px; color: var(--ink-faint); }
+
+.aitrace__hint { margin: var(--s-2) 0 0; font-size: var(--t-xs); color: var(--ink-faint); }

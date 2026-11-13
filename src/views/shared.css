@@ -1,0 +1,116 @@
+/* Gemeinsames fuer alle Ansichten: Flaechen, Listenzeilen, Blatt. */
+
+.topbar__spacer { flex: 1; }
+
+.back {
+  display: grid; place-items: center;
+  width: 32px; height: 32px;
+  margin-right: var(--s-1);
+  border-radius: var(--r-md);
+  color: var(--ink-muted);
+  transition: background var(--d-fast) var(--ease-out), color var(--d-fast) var(--ease-out);
+}
+.back:hover { background: hsl(0 0% 100% / 0.07); color: var(--ink); }
+.back > svg { rotate: 180deg; }
+
+.pane {
+  padding: var(--s-5) var(--s-6) var(--s-8);
+  max-width: 1180px;
+}
+
+.pane--form { max-width: 720px; display: flex; flex-direction: column; gap: var(--s-4); }
+
+.pane__bar {
+  display: flex; align-items: center; gap: var(--s-3);
+  margin-bottom: var(--s-4);
+}
+.pane__bar .input { max-width: 300px; }
+.pane__lead { flex: 1; font-size: var(--t-sm); color: var(--ink-muted); }
+
+.pane__foot {
+  display: flex; justify-content: flex-end; gap: var(--s-2);
+  padding-top: var(--s-3);
+  border-top: 1px solid var(--line);
+}
+
+.field__row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-4); }
+
+/* Zeile in einer Liste -- Mods, Sicherungen, Konten teilen sich das. */
+.mod__id { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.mod__name { font-size: var(--t-sm); font-weight: 580; }
+.mod__file { font-size: var(--t-2xs); color: var(--ink-faint); font-family: var(--mono); }
+
+.mod__x {
+  flex: none;
+  display: grid; place-items: center;
+  width: 30px; height: 30px;
+  border-radius: var(--r-md);
+  color: var(--ink-faint);
+  transition: background var(--d-fast) var(--ease-out), color var(--d-fast) var(--ease-out);
+}
+.mod__x:hover { background: var(--risk-wash); color: var(--risk); }
+
+/* Ladeplatzhalter */
+.skel {
+  height: 168px;
+  border-radius: var(--r-lg);
+  background: linear-gradient(100deg,
+    var(--bg-surface) 30%, var(--bg-raised) 50%, var(--bg-surface) 70%);
+  background-size: 220% 100%;
+  animation: shimmer 1.5s var(--ease-in-out) infinite;
+}
+
+@keyframes shimmer {
+  from { background-position: 180% 0; }
+  to   { background-position: -60% 0; }
+}
+
+/* Blatt von rechts */
+.sheet__scrim {
+  position: fixed; inset: 0; z-index: 50;
+  background: hsl(0 0% 0% / 0.5);
+  backdrop-filter: blur(3px);
+  animation: fade var(--d-med) var(--ease-out) both;
+}
+
+.sheet {
+  position: absolute; top: 0; right: 0; bottom: 0;
+  width: min(440px, 92vw);
+  padding: var(--s-5);
+  overflow-y: auto;
+  background: var(--bg-surface);
+  border-left: 1px solid var(--line-strong);
+  box-shadow: var(--z-4);
+  animation: sheetIn var(--d-slow) var(--ease-out) both;
+}
+
+@keyframes sheetIn {
+  from { transform: translateX(26px); opacity: 0; }
+  to   { transform: none; opacity: 1; }
+}
+
+.sheet__head { display: flex; align-items: center; gap: var(--s-3); margin-bottom: var(--s-4); }
+.sheet__head h2 { font-size: var(--t-lg); }
+
+.sheet__x {
+  flex: none; display: grid; place-items: center;
+  width: 30px; height: 30px; border-radius: var(--r-md);
+  color: var(--ink-faint);
+}
+.sheet__x:hover { background: hsl(0 0% 100% / 0.07); color: var(--ink); }
+
+.sheet__desc { font-size: var(--t-sm); color: var(--ink-muted); margin-bottom: var(--s-4); }
+
+.sheet__facts {
+  display: grid; grid-template-columns: 1fr 1fr; gap: var(--s-3);
+  margin-bottom: var(--s-4);
+}
+.sheet__facts dt {
+  font-size: var(--t-2xs); text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--ink-faint); margin-bottom: 1px;
+}
+.sheet__facts dd { font-size: var(--t-sm); font-weight: 580; }
+
+.sheet__chips { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+
+input[type="range"] { accent-color: var(--accent); width: 100%; }

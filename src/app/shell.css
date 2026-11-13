@@ -1,0 +1,305 @@
+/* =========================================================================
+   Schale: Seitenleiste, Hauptflaeche, Meldungen, Ladebild.
+   ========================================================================= */
+
+.shell {
+  display: grid;
+  grid-template-columns: var(--shell-rail) minmax(0, 1fr);
+  height: 100%;
+}
+
+.shell__main {
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: fade var(--d-med) var(--ease-out) both;
+}
+
+/* ---- Seitenleiste ---------------------------------------------------- */
+
+.rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-4) 0 var(--s-3);
+  background: var(--glass-strong);
+  backdrop-filter: var(--glass-blur);
+  border-right: 1px solid var(--line);
+  position: relative;
+  z-index: 3;
+}
+
+.rail__mark {
+  color: var(--accent-bright);
+  padding: var(--s-2);
+  border-radius: var(--r-md);
+  transition: transform var(--d-med) var(--ease-spring),
+              filter var(--d-med) var(--ease-out);
+  filter: drop-shadow(0 0 10px var(--accent-glow));
+}
+.rail__mark:hover { transform: scale(1.09) rotate(-6deg); }
+.rail__mark:active { transform: scale(0.96); }
+
+/* ---- Editions-Umschalter (Java / Bedrock / Rust) ---------------------- */
+/* Senkrecht, nicht waagerecht: die Leiste ist nur ~84px breit, eine
+   Textkapsel "Java | Bedrock" passt darin nicht lesbar. */
+.ed {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--r-md);
+  background: hsl(0 0% 0% / 0.24);
+  border: 1px solid var(--line);
+}
+:root[data-theme="light"] .ed { background: hsl(0 0% 0% / 0.05); }
+
+.ed__thumb {
+  position: absolute;
+  left: 3px; top: 3px;
+  width: calc(100% - 6px);
+  /* Hoehe und Lage aus --ed-n (Anzahl) und --ed-i (gewaehlte), gesetzt vom Schalter. */
+  height: calc((100% - 6px - (var(--ed-n, 2) - 1) * 2px) / var(--ed-n, 2));
+  transform: translateY(calc(var(--ed-i, 0) * (100% + 2px)));
+  border-radius: 8px;
+  background: var(--accent-wash);
+  box-shadow: inset 0 0 0 1px var(--accent-edge);
+  transition: transform var(--d-med) var(--ease-spring);
+  pointer-events: none;
+}
+
+.ed__opt {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  color: var(--ink-faint);
+  transition: color var(--d-fast) var(--ease-out);
+}
+.ed__opt.is-on { color: var(--accent-bright); }
+.ed__opt:hover { color: var(--ink); }
+
+.rail__nav {
+  list-style: none;
+  padding: 0;
+  margin: var(--s-4) 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  width: 100%;
+  /* Wiederverwendet denselben Keyframe wie `.shell__main` -- hier muss die
+     Regel selbst aber neu stehen, sie vererbt sich nicht automatisch nur
+     weil sich der `key` der Liste aendert. */
+  animation: fade var(--d-med) var(--ease-out) both;
+}
+
+.rail__btn {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: var(--s-3) var(--s-1);
+  color: var(--ink-faint);
+  transition: color var(--d-fast) var(--ease-out),
+              background var(--d-fast) var(--ease-out);
+}
+
+.rail__btn:hover { color: var(--ink); background: hsl(0 0% 100% / 0.04); }
+.rail__btn.is-on { color: var(--accent-bright); }
+
+/* Der aktive Reiter wird durch einen Balken markiert, nicht durch eine
+   Flaeche -- das haelt die Leiste ruhig. */
+.rail__btn.is-on::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 50%;
+  translate: 0 -50%;
+  width: 3px; height: 62%;
+  border-radius: 0 var(--r-pill) var(--r-pill) 0;
+  background: var(--accent);
+  box-shadow: 0 0 14px var(--accent-glow);
+  animation: railMark var(--d-med) var(--ease-spring) both;
+}
+
+@keyframes railMark {
+  from { height: 0; opacity: 0; }
+  to   { height: 62%; opacity: 1; }
+}
+
+.rail__label {
+  font-size: var(--t-2xs);
+  font-weight: 560;
+  letter-spacing: -0.005em;
+  text-align: center;
+}
+
+.rail__dot {
+  position: absolute;
+  top: 9px; right: 17px;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--ok);
+  box-shadow: 0 0 0 2px var(--bg-sunken), 0 0 10px var(--ok);
+  animation: pulse 2.4s var(--ease-in-out) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.4; }
+}
+
+.rail__account {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  padding: var(--s-2) var(--s-1);
+  color: var(--ink-muted);
+  transition: color var(--d-fast) var(--ease-out);
+}
+.rail__account:hover { color: var(--ink); }
+
+.rail__avatar {
+  display: grid;
+  place-items: center;
+  width: 30px; height: 30px;
+  border-radius: var(--r-sm);
+  background: linear-gradient(140deg, var(--accent), var(--accent-dim));
+  color: var(--accent-ink);
+  font-size: var(--t-sm);
+  font-weight: 700;
+  box-shadow: var(--z-2), 0 0 0 1px var(--accent-edge);
+}
+
+/* ---- Download-Fortschritt --------------------------------------------- */
+
+.dlbar {
+  position: fixed;
+  left: var(--s-5); bottom: var(--s-5);
+  z-index: 60;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-3);
+  width: 320px;
+  padding: var(--s-3) var(--s-4);
+  border-radius: var(--r-md);
+  background: var(--glass-strong);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--z-4);
+  color: var(--ink);
+  animation: toastIn var(--d-slow) var(--ease-spring) both;
+}
+.dlbar > svg { flex: none; margin-top: 2px; color: var(--accent-bright); }
+
+.dlbar__body { display: flex; flex-direction: column; gap: var(--s-2); min-width: 0; flex: 1; }
+.dlbar__row { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s-3); }
+.dlbar__label { font-size: var(--t-sm); font-weight: 600; }
+.dlbar__stat { font-size: var(--t-xs); color: var(--ink-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.dlbar__detail { font-size: var(--t-xs); color: var(--ink-faint); }
+
+.dlbar__track {
+  height: 5px;
+  border-radius: 999px;
+  background: var(--bg-sunken);
+  overflow: hidden;
+}
+.dlbar__fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 999px;
+  transition: width var(--d-med) var(--ease-out);
+}
+
+/* ---- Meldungen ------------------------------------------------------ */
+
+.toasts {
+  position: fixed;
+  right: var(--s-5); bottom: var(--s-5);
+  z-index: 60;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: var(--s-2);
+  max-width: 380px;
+  pointer-events: none;
+}
+
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-3) var(--s-3) var(--s-4);
+  border-radius: var(--r-md);
+  background: var(--glass-strong);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--line-strong);
+  box-shadow: var(--z-4);
+  animation: toastIn var(--d-slow) var(--ease-spring) both;
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translate3d(14px, 6px, 0) scale(0.96); }
+  to   { opacity: 1; transform: none; }
+}
+
+.toast--ok   { border-left: 3px solid var(--ok);   color: var(--ink); }
+.toast--warn { border-left: 3px solid var(--warn); }
+.toast--risk { border-left: 3px solid var(--risk); }
+.toast--info { border-left: 3px solid var(--accent); }
+
+.toast--ok   > svg { color: var(--ok); }
+.toast--warn > svg { color: var(--warn); }
+.toast--risk > svg { color: var(--risk); }
+.toast--info > svg { color: var(--accent-bright); }
+
+.toast > svg { flex: none; margin-top: 2px; }
+
+.toast__body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.toast__body strong { font-size: var(--t-sm); font-weight: 600; }
+.toast__body span { font-size: var(--t-xs); color: var(--ink-muted); }
+
+.toast__x {
+  flex: none;
+  color: var(--ink-faint);
+  padding: var(--s-1);
+  border-radius: var(--r-sm);
+  transition: color var(--d-fast) var(--ease-out);
+}
+.toast__x:hover { color: var(--ink); }
+
+/* ---- Ladebild ------------------------------------------------------- */
+
+.boot {
+  height: 100%;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: var(--s-5);
+}
+
+.boot__mark {
+  animation: bootGlow 2s var(--ease-in-out) infinite alternate;
+  filter: drop-shadow(0 0 26px var(--accent-glow));
+}
+
+@keyframes bootGlow {
+  from { opacity: 0.5; transform: scale(0.96); }
+  to   { opacity: 1;   transform: scale(1.02); }
+}
+
+.boot__text {
+  font-size: var(--t-sm);
+  color: var(--ink-faint);
+  letter-spacing: 0.04em;
+}

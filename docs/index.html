@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BuildMC Launcher herunterladen</title>
+<style>
+  :root { --bg:#0f1218; --card:#181d27; --fg:#e8ecf4; --muted:#9aa3b5; --accent:#4cc38a; --line:#273041; }
+  @media (prefers-color-scheme: light) { :root { --bg:#f4f6fa; --card:#fff; --fg:#161b26; --muted:#5b6579; --accent:#16915c; --line:#d9dfea; } }
+  body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.5 system-ui, sans-serif; }
+  main { max-width:640px; margin:0 auto; padding:48px 16px; }
+  h1 { margin:0 0 6px; font-size:2rem; }
+  p.lead { color:var(--muted); margin:0 0 28px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px 20px; margin-bottom:14px; display:flex; gap:16px; align-items:center; justify-content:space-between; flex-wrap:wrap; }
+  .card h2 { margin:0; font-size:1.1rem; } .card small { color:var(--muted); }
+  a.btn { background:var(--accent); color:#06140d; text-decoration:none; font-weight:600; padding:10px 18px; border-radius:8px; }
+  a.btn.alt { background:transparent; color:var(--accent); border:1px solid var(--accent); }
+  footer { color:var(--muted); font-size:.9rem; margin-top:28px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>BuildMC Launcher</h1>
+  <p class="lead">Der Launcher für BuildMC. Wähle dein System.</p>
+  <div class="card"><div><h2>Windows 11</h2><small>Installer (.exe) oder MSI-Paket</small></div>
+    <div><a class="btn" href="https://github.com/condingmaaster/buildmc-launcher/releases/latest">Windows .exe / .msi</a></div></div>
+  <div class="card"><div><h2>Linux (Debian/Ubuntu)</h2><small>.deb-Paket</small></div>
+    <div><a class="btn alt" href="https://github.com/condingmaaster/buildmc-launcher/releases/latest">Linux .deb</a></div></div>
+  <footer>Alle Dateien liegen bei den <a href="https://github.com/condingmaaster/buildmc-launcher/releases" style="color:var(--accent)">GitHub-Releases</a>. Neueste Version: oben auf der Release-Seite.</footer>
+</main>
+</body>
+</html>

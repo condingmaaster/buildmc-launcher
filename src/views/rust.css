@@ -1,0 +1,58 @@
+/* Rust-Edition: Fortschritt von Bau und Vorbereitung, Bau-Ausgabe. */
+
+.rust__job { display: flex; flex-direction: column; gap: 6px; }
+
+.rust__bar {
+  height: 6px;
+  border-radius: 99px;
+  background: var(--bg-sunken);
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+.rust__bar span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transition: width var(--d-med) var(--ease-out);
+}
+
+.rust__job-label { font-size: var(--t-sm); color: var(--ink-muted); }
+
+.rust__log {
+  margin: 0;
+  max-height: 220px;
+  overflow: auto;
+  padding: var(--s-3);
+  background: var(--bg-sunken);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  font: 12px/1.45 ui-monospace, "JetBrains Mono", monospace;
+  color: var(--ink-muted);
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.rust__legal { font-size: var(--t-xs, 12px); opacity: 0.85; }
+
+.rust__intro { padding: var(--s-3); border: 1px solid var(--accent-edge); border-radius: var(--r-md); background: var(--accent-wash); color: var(--ink); }
+.rust__entry { display: flex; flex-direction: column; gap: 6px; list-style: none; }
+.rust__mods { margin-left: var(--s-6); padding: var(--s-3); border-left: 2px solid var(--accent-edge); display: flex; flex-direction: column; gap: var(--s-2); }
+.rust__heap { display: inline-flex; align-items: center; gap: 6px; font-size: var(--t-sm); color: var(--ink-muted); }
+.rust__heap .input { width: 90px; }
+.rust__mod { list-style: none; padding: var(--s-2) var(--s-3); background: var(--bg-sunken); border: 1px solid var(--line); border-radius: var(--r-md); }
+.rust__mod-head { display: flex; align-items: center; gap: var(--s-2); }
+.rust__mod-head .mod__file { flex: 1; }
+.rust__reasons { margin: 6px 0 0; padding-left: 18px; font-size: var(--t-sm); color: var(--ink-muted); }
+.rust__missing { margin-top: 6px; font-size: var(--t-sm); }
+.rust__missing pre { max-height: 160px; overflow: auto; margin: 4px 0 0; font: 11px/1.4 ui-monospace, monospace; color: var(--ink-muted); }
+
+/* Laeuft etwas, wandert ein Glanz ueber den Balken -- auch wenn der Anteil gerade still steht. */
+.rust__bar { position: relative; }
+.rust__bar.is-busy::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, hsl(0 0% 100% / 0.35), transparent);
+  width: 30%;
+  animation: rust-glanz 1.4s linear infinite;
+}
+@keyframes rust-glanz { from { transform: translateX(-100%); } to { transform: translateX(340%); } }
