@@ -88,23 +88,29 @@ pub async fn install_profile(instance: &InstanceConfig) -> Result<String> {
     Ok(version_id)
 }
 
-/// Öffnet den offiziellen Launcher, soweit er sich finden lässt. `false`: nicht gefunden.
+/// Öffnet den offiziellen Launcher, soweit er sich finden lässt. `false`: nicht gefunden oder nicht installiert.
 pub fn open_launcher() -> bool {
-    use std::process::Command;
-    let mut tries: Vec<(String, Vec<String>)> = Vec::new();
+    use std::process::{Command, Stdio};
     if cfg!(windows) {
         for var in ["ProgramFiles(x86)", "ProgramFiles"] {
             if let Ok(base) = std::env::var(var) {
                 let exe = PathBuf::from(base).join("Minecraft Launcher").join("MinecraftLauncher.exe");
-                if exe.exists() {
-                    tries.push((exe.to_string_lossy().into_owned(), vec![]));
+                if exe.exists() && Command::new(&exe).spawn().is_ok() {
+                    return true;
                 }
             }
         }
-        tries.push(("explorer.exe".into(), vec!["shell:AppsFolder\\Microsoft.4297127D64EC6_8wekyb3d8bbwe!Minecraft".into()]));
-    } else {
-        tries.push(("minecraft-launcher".into(), vec![]));
-        tries.push(("flatpak".into(), vec!["run".into(), "com.mojang.Minecraft".into()]));
+        // Microsoft-Store-Version: nur starten, wenn das Paket wirklich installiert ist
+        let installed = dirs::data_local_dir()
+            .map(|d| d.join("Packages").join("Microsoft.4297127D64EC6_8wekyb3d8bbwe").exists())
+            .unwrap_or(false);
+        return installed
+            && Command::new("explorer.exe").arg("shell:AppsFolder\\Microsoft.4297127D64EC6_8wekyb3d8bbwe!Minecraft").spawn().is_ok();
     }
-    tries.into_iter().any(|(prog, args)| Command::new(prog).args(args).spawn().is_ok())
+    // Linux: erst das normale Programm (fehlt es, scheitert der Start sofort), dann Flatpak nur, wenn es installiert ist
+    if Command::new("minecraft-launcher").spawn().is_ok() {
+        return true;
+    }
+    let flatpak_installed = Command::new("flatpak").args(["info", "com.mojang.Minecraft"]).stdout(Stdio::null()).stderr(Stdio::null()).status().map(|s| s.success()).unwrap_or(false);
+    flatpak_installed && Command::new("flatpak").args(["run", "com.mojang.Minecraft"]).spawn().is_ok()
 }

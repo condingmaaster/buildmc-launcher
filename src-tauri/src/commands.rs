@@ -144,7 +144,7 @@ pub async fn launch_in_official_launcher(instance_id: String) -> Result<String> 
     Ok(if crate::launch::official::open_launcher() {
         "Das Profil liegt im Minecraft-Launcher bereit. Dort auf „Spielen“ drücken.".to_string()
     } else {
-        "Das Profil ist angelegt. Öffne den Minecraft-Launcher selbst und wähle es aus.".to_string()
+        "Das Profil ist angelegt, aber der Minecraft-Launcher wurde nicht gefunden. Installiere ihn (unter Linux zum Beispiel per Flatpak: com.mojang.Minecraft), melde dich dort an und wähle das Profil „BuildMC – …“.".to_string()
     })
 }
 

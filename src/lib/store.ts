@@ -186,17 +186,18 @@ export const useApp = create<State>((set, get) => ({
   /* Start und Stopp liegen im Store, weil beide Ansichten denselben
      Laufzustand zeigen -- sonst haengt eine davon hinterher. */
   async startInstance(id, join = { kind: "none" }) {
+    /* Der Start läuft immer über den offiziellen Minecraft-Launcher: Profil anlegen, Launcher öffnen.
+       Anmeldung und Spielstart übernimmt er. Ein Beitrittsziel lässt sich so nicht mitgeben. */
     const name = get().instances.find((i) => i.id === id)?.name ?? "Instanz";
     try {
-      await api.launch.start(id, join);
-      await get().reloadRunning();
+      const detail = await api.launch.official(id);
       get().notify({
         kind: "ok",
-        title: `${name} wird gestartet`,
-        detail: join.kind === "server" ? `Verbindet zu ${join.address}` : undefined,
+        title: `${name}: Minecraft-Launcher`,
+        detail: join.kind === "server" ? `${detail} Server: ${join.address}` : detail,
       });
     } catch (e) {
-      get().notify({ kind: "risk", title: "Start fehlgeschlagen", detail: String(e) });
+      get().notify({ kind: "risk", title: "Übergabe fehlgeschlagen", detail: String(e) });
       throw e;
     }
   },

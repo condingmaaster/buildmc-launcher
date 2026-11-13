@@ -72,23 +72,13 @@ function Accounts() {
     });
   }
 
-  async function startMicrosoft() {
-    setBusy(true);
-    try {
-      const start = await api.auth.startDevice();
-      setDevice(start);
-    } catch (e) {
-      notify({ kind: "risk", title: "Anmeldung nicht m\u00f6glich", detail: String(e) });
-    } finally { setBusy(false); }
-  }
-
   return (
     <section className="pane pane--form">
       <h2 className="set__h">Angemeldete Konten</h2>
 
       {!accounts.length && (
         <Empty icon="spark" title="Kein Konto"
-               detail="Melde dich mit Microsoft an, um auf öffentlichen Servern zu spielen." />
+               detail="Die Microsoft-Anmeldung passiert im offiziellen Minecraft-Launcher. Hier gibt es nur Offline-Konten." />
       )}
 
       <ul className="acc__list">
@@ -120,12 +110,10 @@ function Accounts() {
         ))}
       </ul>
 
-      <div className="acc__add">
-        <Button tone="primary" icon="plus" busy={busy}
-                onClick={() => void startMicrosoft()}>
-          Microsoft-Konto hinzufügen
-        </Button>
-      </div>
+      <p className="set__note">
+        Die Microsoft-Anmeldung übernimmt der offizielle Minecraft-Launcher: „Spielen“ legt die Instanz
+        dort als Profil an und öffnet ihn. Melde dich dort einmal an, hier ist nichts einzutragen.
+      </p>
 
       <h2 className="set__h">Offline-Konto</h2>
       <p className="set__note">
