@@ -265,53 +265,86 @@ pub struct ExportOptions {
 
 fn yes() -> bool { true }
 
-/// Schreibt ein `.mrpack`.
+/// Schreibt ein `.mrpack`, das sich in der Modrinth App (und anderen Launchern) 1:1 importieren lässt.
 ///
-/// Mods aus den Portalen werden als Verweis eingetragen, nicht mitgepackt:
-/// so bleibt das Paket klein, und fremde Dateien werden nicht
-/// weiterverbreitet. Von Hand hinzugefuegte Mods lassen sich nicht
-/// verweisen und werden deshalb gemeldet statt stillschweigend ausgelassen.
-pub fn export(
+/// Mods mit Modrinth-Quelle werden als Verweis mit echter Download-Adresse und beiden Prüfsummen
+/// (sha1, sha512) eingetragen, sofern die lokale Datei genau der Datei von Modrinth entspricht.
+/// Alle anderen Mods (CurseForge, von Hand hinzugefügt, verändert) werden als Datei unter
+/// `overrides/mods/` mitgepackt, damit nichts fehlt. Dazu kommen Einstellungen, Server-Liste und
+/// auf Wunsch Konfiguration, Ressourcen-/Shaderpakete und Welten. Rückgabe: Mods, die mitgepackt wurden.
+pub async fn export(
     instance_id: &str,
     options: &ExportOptions,
     output: &Path,
 ) -> Result<Vec<String>> {
+    use sha1::{Digest, Sha1};
+    use sha2::Sha512;
+
     let instance = crate::instance::load(instance_id)?;
     let game_dir = instance.game_dir()?;
     let known = crate::mods::meta::load(instance_id);
 
     let mut dependencies = HashMap::new();
     dependencies.insert("minecraft".to_string(), instance.mc_version.clone());
-    if let Some(v) = &instance.fabric_version {
-        let key = match instance.loader.as_str() {
-            "quilt" => "quilt-loader",
-            "neoforge" => "neoforge",
-            "forge" => "forge",
-            _ => "fabric-loader",
-        };
-        dependencies.insert(key.to_string(), v.clone());
+    let loader_key = match instance.loader.as_str() {
+        "quilt" => Some(("quilt-loader", crate::loader::LoaderKind::Quilt)),
+        "neoforge" | "forge" => None,
+        _ => Some(("fabric-loader", crate::loader::LoaderKind::Fabric)),
+    };
+    match (&instance.fabric_version, loader_key) {
+        (Some(v), Some((key, _))) if !v.is_empty() => { dependencies.insert(key.to_string(), v.clone()); }
+        (_, Some((key, kind))) => {
+            if let Ok(v) = crate::loader::recommended(kind, &instance.mc_version).await { dependencies.insert(key.to_string(), v); }
+        }
+        (Some(v), None) => { dependencies.insert(instance.loader.clone(), v.clone()); }
+        _ => {}
     }
 
-    let mut files = Vec::new();
-    let mut not_referenced = Vec::new();
-
+    // Erst alle Mods einlesen und hashen, dann die Modrinth-Abfragen gleichzeitig (viele kleine Anfragen nacheinander dauern lange).
+    struct Local { filename: String, path: std::path::PathBuf, size: u64, sha1: String, sha512: String, version_id: Option<String> }
+    let mut locals = Vec::new();
     for m in crate::mods::list(instance_id)? {
-        // Abgeschaltete gehoeren nicht ins Paket.
         if !m.enabled {
             continue;
         }
-        match known.get(&m.filename).filter(|meta| !meta.version_id.is_empty()) {
-            Some(meta) => files.push(PackFile {
-                path: format!("mods/{}", m.filename),
-                hashes: HashMap::new(),
-                downloads: vec![format!(
-                    "https://api.modrinth.com/v2/version/{}",
-                    meta.version_id
-                )],
-                file_size: m.size_bytes,
-                env: None,
+        let path = game_dir.join("mods").join(&m.filename);
+        let bytes = std::fs::read(&path)?;
+        let version_id = known
+            .get(&m.filename)
+            .filter(|x| x.provider == "modrinth" && !x.version_id.is_empty())
+            .map(|x| x.version_id.clone());
+        locals.push(Local {
+            filename: m.filename.clone(), path, size: bytes.len() as u64,
+            sha1: hex::encode(Sha1::digest(&bytes)), sha512: hex::encode(Sha512::digest(&bytes)), version_id,
+        });
+    }
+    let lookups = locals.iter().map(|l| {
+        let url = l.version_id.as_ref().map(|v| format!("https://api.modrinth.com/v2/version/{v}"));
+        async move {
+            match url {
+                Some(u) => crate::http::get_json::<serde_json::Value>(&u).await.ok(),
+                None => None,
+            }
+        }
+    });
+    let answers = futures::future::join_all(lookups).await;
+
+    let mut files = Vec::new();
+    let mut bundled: Vec<(String, std::path::PathBuf)> = Vec::new();
+    for (l, answer) in locals.into_iter().zip(answers) {
+        let reference = answer.and_then(|v| {
+            v["files"].as_array()?.iter()
+                .find(|f| f["hashes"]["sha1"].as_str() == Some(l.sha1.as_str()))?["url"].as_str().map(str::to_string)
+        });
+        match reference {
+            Some(url) => files.push(PackFile {
+                path: format!("mods/{}", l.filename),
+                hashes: HashMap::from([("sha1".to_string(), l.sha1), ("sha512".to_string(), l.sha512)]),
+                downloads: vec![url],
+                file_size: l.size,
+                env: Some(HashMap::from([("client".to_string(), "required".to_string()), ("server".to_string(), "required".to_string())])),
             }),
-            None => not_referenced.push(m.filename.clone()),
+            None => bundled.push((l.filename, l.path)),
         }
     }
 
@@ -334,6 +367,20 @@ pub fn export(
     zip.start_file(INDEX_NAME, opts)?;
     zip.write_all(&serde_json::to_vec_pretty(&index)?)?;
 
+    // Mods, die sich nicht verweisen lassen, reisen als Datei mit.
+    for (filename, local) in &bundled {
+        zip.start_file(format!("overrides/mods/{filename}"), opts)?;
+        std::io::copy(&mut std::fs::File::open(local)?, &mut zip)?;
+    }
+    // Einstellungen und Server-Liste gehören zu einer 1:1-Kopie.
+    for name in ["options.txt", "servers.dat"] {
+        let path = game_dir.join(name);
+        if path.is_file() {
+            zip.start_file(format!("overrides/{name}"), opts)?;
+            std::io::copy(&mut std::fs::File::open(&path)?, &mut zip)?;
+        }
+    }
+
     let mut folders: Vec<&str> = Vec::new();
     if options.include_config { folders.push("config"); }
     if options.include_packs { folders.push("resourcepacks"); folders.push("shaderpacks"); }
@@ -347,7 +394,7 @@ pub fn export(
     }
 
     zip.finish()?;
-    Ok(not_referenced)
+    Ok(bundled.into_iter().map(|(name, _)| name).collect())
 }
 
 fn add_override(
@@ -378,6 +425,20 @@ fn add_override(
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod export_real {
+    /// Von Hand: `BUILDMC_EXPORT_TEST=<instanz-id> cargo test export_real -- --ignored --nocapture`
+    #[tokio::test]
+    #[ignore]
+    async fn export_real_instance() {
+        let Ok(id) = std::env::var("BUILDMC_EXPORT_TEST") else { return };
+        let out = std::path::PathBuf::from("/tmp/buildmc-export-test.mrpack");
+        let opts = super::ExportOptions { name: String::new(), version: "1.0.0".into(), summary: None, include_config: true, include_packs: true, include_worlds: false };
+        let bundled = super::export(&id, &opts, &out).await.unwrap();
+        println!("bundled: {bundled:?}");
+    }
 }
 
 #[cfg(test)]

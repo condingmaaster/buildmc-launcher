@@ -20,6 +20,16 @@ export function InstanceDetail({ id }: { id: string }) {
   const stopInstance = useApp((s) => s.stopInstance);
   const [tab, setTab] = useState<Tab>("mods");
 
+  /* .mrpack für die Modrinth App: Mods als Verweis oder mitgepackt, dazu Einstellungen und Konfiguration. */
+  async function exportModrinth() {
+    try {
+      const path = await api.modpacks.exportModrinth(id);
+      notify({ kind: "ok", title: "Für Modrinth exportiert", detail: `${path} — in der Modrinth App: Instanz hinzufügen → Aus Datei importieren.` });
+    } catch (e) {
+      notify({ kind: "risk", title: "Export fehlgeschlagen", detail: String(e) });
+    }
+  }
+
   if (!inst) {
     return <Empty icon="warn" title="Instanz nicht gefunden"
                   action={<Button onClick={() => go({ name: "library" })}>Zur Bibliothek</Button>} />;
@@ -41,6 +51,7 @@ export function InstanceDetail({ id }: { id: string }) {
         <div className="topbar__spacer" />
 
         <Button icon="folder" onClick={() => void api.instances.openFolder(id)}>Ordner</Button>
+        <Button icon="folder" onClick={() => void exportModrinth()}>Für Modrinth exportieren</Button>
         <Button tone={running ? "outline" : "primary"} icon={running ? "stop" : "play"}
                 onClick={() => void (running ? stopInstance(id) : startInstance(id))}>
           {running ? "Beenden" : "Spielen"}

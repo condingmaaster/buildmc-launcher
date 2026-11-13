@@ -122,6 +122,7 @@ pub fn run() {
             commands::preview_modpack,
             commands::import_modpack,
             commands::export_modpack,
+            commands::export_for_modrinth,
             // Fremde Launcher
             commands::detect_foreign_launchers,
             commands::import_foreign_instance,

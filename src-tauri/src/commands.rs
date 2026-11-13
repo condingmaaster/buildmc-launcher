@@ -956,12 +956,34 @@ pub async fn import_modpack(app: AppHandle, path: String) -> Result<InstanceConf
 /// von Hand hinzugefuegte Mods. Sie fehlen im Paket, und das soll der
 /// Nutzer wissen, statt es beim Einlesen anderswo zu merken.
 #[tauri::command]
-pub fn export_modpack(
+pub async fn export_modpack(
     instance_id: String,
     options: crate::modpack::ExportOptions,
     output_path: String,
 ) -> Result<Vec<String>> {
-    crate::modpack::export(&instance_id, &options, std::path::Path::new(&output_path))
+    crate::modpack::export(&instance_id, &options, std::path::Path::new(&output_path)).await
+}
+
+/// Exportiert die Instanz als `.mrpack` in den Downloads-Ordner, damit die Modrinth App sie 1:1 importieren kann
+/// (Einstellungen, Server-Liste, Konfiguration, Ressourcen- und Shaderpakete; Welten nicht). Gibt den Pfad zurück.
+#[tauri::command]
+pub async fn export_for_modrinth(instance_id: String) -> Result<String> {
+    let instance = crate::instance::load(&instance_id)?;
+    let dir = dirs::download_dir()
+        .or_else(dirs::home_dir)
+        .ok_or_else(|| crate::Error::other("Der Downloads-Ordner ließ sich nicht bestimmen"))?;
+    let safe: String = instance.name.chars().map(|c| if c.is_alphanumeric() || c == '-' || c == '_' { c } else { '_' }).collect();
+    let out = dir.join(format!("{safe}.mrpack"));
+    let options = crate::modpack::ExportOptions {
+        name: instance.name.clone(),
+        version: "1.0.0".into(),
+        summary: None,
+        include_config: true,
+        include_packs: true,
+        include_worlds: false,
+    };
+    crate::modpack::export(&instance_id, &options, &out).await?;
+    Ok(out.to_string_lossy().into_owned())
 }
 
 /* ---- Fremde Launcher ----------------------------------------------------- */

@@ -164,6 +164,8 @@ export const modpacks = {
   preview: (path: string) => call<{ name: string; version: string; mod_count: number }>(
                                "preview_modpack", { path }),                           // 0.1.3
   import:  (path: string) => call<Instance>("import_modpack", { path }),               // 0.1.3
+  /** Schreibt ein .mrpack in den Downloads-Ordner (Import in der Modrinth App); gibt den Pfad zurück. */
+  exportModrinth: (instanceId: string) => call<string>("export_for_modrinth", { instanceId }),
   export:  (instanceId: string, options: Record<string, unknown>, outputPath: string) =>
              call<void>("export_modpack", { instanceId, options, outputPath }),         // 0.1.3
 };

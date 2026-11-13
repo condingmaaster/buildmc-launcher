@@ -16,6 +16,9 @@ use crate::{Error, Result};
 
 /// Das Datenverzeichnis des offiziellen Minecraft-Launchers.
 pub fn minecraft_dir() -> Result<PathBuf> {
+    if let Ok(dir) = std::env::var("BUILDMC_MINECRAFT_DIR") {
+        return Ok(PathBuf::from(dir)); // für Tests und Sonderfälle
+    }
     let no_home = || Error::other("Das Benutzerverzeichnis ließ sich nicht bestimmen");
     if cfg!(windows) {
         Ok(dirs::data_dir().ok_or_else(no_home)?.join(".minecraft"))
@@ -113,4 +116,43 @@ pub fn open_launcher() -> bool {
     }
     let flatpak_installed = Command::new("flatpak").args(["info", "com.mojang.Minecraft"]).stdout(Stdio::null()).stderr(Stdio::null()).status().map(|s| s.success()).unwrap_or(false);
     flatpak_installed && Command::new("flatpak").args(["run", "com.mojang.Minecraft"]).spawn().is_ok()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Legt ein Profil in ein frisches `.minecraft` und prüft Format, Sicherung und Wiederholung.
+    #[tokio::test]
+    async fn profil_wird_angelegt_und_bleibt_einzigartig() {
+        let dir = std::env::temp_dir().join(format!("buildmc-official-test-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(
+            dir.join("launcher_profiles.json"),
+            r#"{"profiles":{"fremd":{"name":"Fremdes Profil","type":"custom","lastVersionId":"1.20.1"}},"version":3}"#,
+        ).unwrap();
+        std::env::set_var("BUILDMC_MINECRAFT_DIR", &dir);
+
+        let mut instance = crate::instance::InstanceConfig::default();
+        instance.id = "test-instanz".into();
+        instance.name = "Meine Instanz".into();
+        instance.mc_version = "1.21.4".into();
+        instance.loader = "vanilla".into();
+        // Vanilla braucht kein Netz; Spielordner liegt in der echten Instanzablage, daher nur das Profil prüfen.
+        let id = install_profile(&instance).await.unwrap();
+        assert_eq!(id, "1.21.4");
+        install_profile(&instance).await.unwrap();
+
+        let doc: serde_json::Value = serde_json::from_str(&std::fs::read_to_string(dir.join("launcher_profiles.json")).unwrap()).unwrap();
+        let profiles = doc["profiles"].as_object().unwrap();
+        assert!(profiles.contains_key("fremd"), "fremde Profile bleiben erhalten");
+        assert_eq!(profiles.keys().filter(|k| k.starts_with("buildmc-")).count(), 1, "zweiter Aufruf ersetzt, doppelt nie");
+        let p = &profiles["buildmc-test-instanz"];
+        assert_eq!(p["lastVersionId"], "1.21.4");
+        assert!(p["javaArgs"].as_str().unwrap().contains("-Xmx"));
+        assert!(dir.join("launcher_profiles.json.buildmc-backup").exists());
+        let _ = std::fs::remove_dir_all(&dir);
+        if let Ok(d) = crate::paths::instance_dir("test-instanz") { let _ = std::fs::remove_dir_all(d); } // vom Test angelegter Spielordner
+    }
 }

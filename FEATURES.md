@@ -128,3 +128,12 @@ Start. Die Kombination aus ehrlicher Einordnung (keine übertriebenen Verspreche
 Tiefe (Parallelität, Ratenbegrenzung, Zwischenspeicher, lizenzsaubere Einbindung von GPL-Software in
 Closed-Source-Code) und einer durchdachten Nutzerführung (warnen statt sperren, keine versteckte
 Automatik) gibt es sonst nirgends in diesem Bereich.
+
+## 0.4.5 / 0.4.6
+
+- **Start über den offiziellen Minecraft-Launcher.** „Spielen“ legt die Instanz als Profil im offiziellen Launcher an
+  (Fabric-Version unter `.minecraft/versions/`, Profil in `launcher_profiles.json` mit dem Instanzordner als Spielordner)
+  und öffnet ihn. Anmeldung und Spielstart macht der offizielle Launcher; eigene Anwendungs-ID ist nicht mehr nötig.
+- **Export für die Modrinth App** (Instanz → „Für Modrinth exportieren“): schreibt ein `.mrpack` in den Downloads-Ordner.
+  Mods von Modrinth werden mit Download-Adresse, sha1 und sha512 verwiesen, alle anderen Mods liegen als Datei im Paket;
+  dazu `options.txt`, `servers.dat`, Konfiguration, Ressourcen- und Shaderpakete (Welten nicht).
