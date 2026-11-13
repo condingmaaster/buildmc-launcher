@@ -23,10 +23,25 @@
   <h1>BuildMC Launcher</h1>
   <p class="lead">Der Launcher für BuildMC. Wähle dein System.</p>
   <div class="card"><div><h2>Windows 11</h2><small>Installer (.exe) oder MSI-Paket</small></div>
-    <div><a class="btn" href="https://github.com/condingmaaster/buildmc-launcher/releases/latest">Windows .exe / .msi</a></div></div>
+    <div><a class="btn" id="dl-exe" href="https://github.com/condingmaaster/buildmc-launcher/releases/latest">Windows .exe</a> <a class="btn alt" id="dl-msi" href="https://github.com/condingmaaster/buildmc-launcher/releases/latest">.msi</a></div></div>
   <div class="card"><div><h2>Linux (Debian/Ubuntu)</h2><small>.deb-Paket</small></div>
-    <div><a class="btn alt" href="https://github.com/condingmaaster/buildmc-launcher/releases/latest">Linux .deb</a></div></div>
-  <footer>Alle Dateien liegen bei den <a href="https://github.com/condingmaaster/buildmc-launcher/releases" style="color:var(--accent)">GitHub-Releases</a>. Neueste Version: oben auf der Release-Seite.</footer>
+    <div><a class="btn alt" id="dl-deb" href="https://github.com/condingmaaster/buildmc-launcher/releases/latest">Linux .deb</a></div></div>
+  <footer><span id="ver"></span> Alle Dateien liegen bei den <a href="https://github.com/condingmaaster/buildmc-launcher/releases" style="color:var(--accent)">GitHub-Releases</a>. Neueste Version: oben auf der Release-Seite.</footer>
 </main>
+<script>
+// The buttons point at the files of the newest GitHub release; until that is known they fall back to the release page.
+fetch("https://api.github.com/repos/condingmaaster/buildmc-launcher/releases/latest")
+  .then(function (r) { return r.ok ? r.json() : null; })
+  .then(function (rel) {
+    if (!rel || !rel.assets) return;
+    var pick = function (re) { return rel.assets.filter(function (a) { return re.test(a.name); })[0]; };
+    [["dl-exe", /setup\.exe$|\.exe$/i], ["dl-msi", /\.msi$/i], ["dl-deb", /\.deb$/i]].forEach(function (x) {
+      var a = pick(x[1]);
+      if (a) document.getElementById(x[0]).href = a.browser_download_url;
+    });
+    document.getElementById("ver").textContent = "Version " + rel.tag_name.replace(/^v/, "") + ".";
+  })
+  .catch(function () {});
+</script>
 </body>
 </html>
