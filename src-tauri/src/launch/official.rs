@@ -61,6 +61,7 @@ pub async fn install_profile(instance: &InstanceConfig) -> Result<String> {
 
     // 2. das Profil in launcher_profiles.json
     let game_dir = crate::launch::ensure_game_dir(instance)?;
+    grant_flatpak_access(&mc, &game_dir)?;
     let path = mc.join("launcher_profiles.json");
     let mut doc: Value = if path.exists() {
         let raw = std::fs::read_to_string(&path)?;
@@ -89,6 +90,30 @@ pub async fn install_profile(instance: &InstanceConfig) -> Result<String> {
     });
     std::fs::write(&path, serde_json::to_string_pretty(&doc).map_err(|e| Error::other(e.to_string()))?)?;
     Ok(version_id)
+}
+
+/// Der Flatpak-Launcher läuft in einer Sandbox, die nur sein eigenes `.minecraft` sieht. Ohne Freigabe
+/// findet das Spiel den Instanzordner nicht und startet ohne Mods, Optionen und Server (also praktisch
+/// Vanilla). Darum den Ordner mit allen Instanzen dauerhaft für das Flatpak freigeben.
+fn grant_flatpak_access(mc: &std::path::Path, game_dir: &std::path::Path) -> Result<()> {
+    if !mc.to_string_lossy().contains(".var/app/com.mojang.Minecraft") || game_dir.starts_with(mc) {
+        return Ok(());
+    }
+    let shared = game_dir.parent().unwrap_or(game_dir);
+    let ok = std::process::Command::new("flatpak")
+        .args(["override", "--user", &format!("--filesystem={}", shared.display()), "com.mojang.Minecraft"])
+        .status()
+        .map(|s| s.success())
+        .unwrap_or(false);
+    if ok {
+        Ok(())
+    } else {
+        Err(Error::other(format!(
+            "Der Minecraft-Launcher (Flatpak) darf den Instanzordner nicht lesen. Gib ihn einmal frei: \
+             flatpak override --user --filesystem={} com.mojang.Minecraft",
+            shared.display()
+        )))
+    }
 }
 
 /// Öffnet den offiziellen Launcher, soweit er sich finden lässt. `false`: nicht gefunden oder nicht installiert.
