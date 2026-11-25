@@ -3,15 +3,13 @@
 //! Der Weg zum Minecraft-Token führt über vier Dienste, jeder mit eigenem
 //! Format:
 //!
-//! 1. **Microsoft-Konto** über `login.live.com` -- den älteren Live-Weg,
-//!    nicht den Azure-Weg. Er kommt mit der vorgegebenen Rückleitung
-//!    `oauth20_desktop.srf` aus, braucht also keinen eigenen Dienst, und
-//!    verwendet den Geltungsbereich `service::user.auth.xboxlive.com::MBI_SSL`.
-//!    Zwei Wege stehen offen: ein Anmeldefenster mit Rückleitung oder das
-//!    Gerätecode-Verfahren über `oauth20_connect.srf`.
-//!
-//!    Dass es dieser Weg ist, stammt nicht aus einer Annahme: die Adressen
-//!    stehen so im Binary der Fassung 0.1.3.
+//! 1. **Microsoft-Konto** über den Azure-Weg
+//!    (`login.microsoftonline.com/consumers/oauth2/v2.0`) mit dem
+//!    Geltungsbereich `XboxLive.signin offline_access`. Die Anwendung ist
+//!    bei Mojang freigegeben; der ältere Live-Weg (`login.live.com`,
+//!    `MBI_SSL`) lehnt sie ab. Zwei Wege stehen offen: das
+//!    Gerätecode-Verfahren oder ein Anmeldefenster mit der Rückleitung
+//!    `nativeclient`.
 //! 2. **Xbox Live** -- tauscht das Microsoft-Token gegen ein Xbox-Token.
 //! 3. **XSTS** -- autorisiert es für Minecraft. Hier kommen die
 //!    aussagekräftigsten Fehler: kein Xbox-Konto, Kindersicherung, Region.
@@ -25,20 +23,23 @@ use serde::{Deserialize, Serialize};
 use crate::error::{Error, Result};
 use crate::http;
 
-const AUTHORIZE_URL: &str = "https://login.live.com/oauth20_authorize.srf";
+// Azure-Weg über den Endpunkt für persönliche Konten. Der alte Live-Weg
+// (login.live.com, MBI_SSL) lehnt die von Mojang freigegebene Anwendung
+// mit invalid_scope ab.
+const AUTHORIZE_URL: &str = "https://login.microsoftonline.com/consumers/oauth2/v2.0/authorize";
 /// Von Microsoft vorgegebene Rückleitung für Desktop-Anwendungen. Auf sie
 /// landet der Browser mit dem Code in der Adresszeile; ein eigener Dienst
 /// ist dafür nicht nötig.
-const REDIRECT_URI: &str = "https://login.live.com/oauth20_desktop.srf";
-const DEVICE_CODE_URL: &str = "https://login.live.com/oauth20_connect.srf";
-const TOKEN_URL: &str = "https://login.live.com/oauth20_token.srf";
+const REDIRECT_URI: &str = "https://login.microsoftonline.com/common/oauth2/nativeclient";
+const DEVICE_CODE_URL: &str = "https://login.microsoftonline.com/consumers/oauth2/v2.0/devicecode";
+const TOKEN_URL: &str = "https://login.microsoftonline.com/consumers/oauth2/v2.0/token";
 const XBL_URL: &str = "https://user.auth.xboxlive.com/user/authenticate";
 const XSTS_URL: &str = "https://xsts.auth.xboxlive.com/xsts/authorize";
 const MC_LOGIN_URL: &str = "https://api.minecraftservices.com/authentication/login_with_xbox";
 
-/// Der Geltungsbereich des Live-Wegs. Er schliesst das Erneuerungstoken
-/// mit ein -- ohne das müsste man sich täglich neu anmelden.
-const SCOPE: &str = "service::user.auth.xboxlive.com::MBI_SSL";
+/// Der Geltungsbereich des Azure-Wegs. offline_access liefert das
+/// Erneuerungstoken -- ohne das müsste man sich täglich neu anmelden.
+const SCOPE: &str = "XboxLive.signin offline_access";
 
 /* ---- Anmeldefenster ------------------------------------------------------ */
 
@@ -159,7 +160,7 @@ fn default_interval() -> u64 {
 pub async fn start_device_code(client_id: &str) -> Result<DeviceCodeStart> {
     let response = http::client()
         .post(DEVICE_CODE_URL)
-        .form(&[("client_id", client_id), ("scope", SCOPE), ("response_type", "device_code")])
+        .form(&[("client_id", client_id), ("scope", SCOPE)])
         .send()
         .await?;
 
@@ -256,7 +257,9 @@ pub async fn ensure_fresh(account: &super::Account) -> Result<super::Account> {
 
     let client_id = crate::ai::keys::ms_client_id().ok_or_else(|| {
         Error::other(
-            "Das Zugriffstoken ist abgelaufen, aber es ist keine              Azure-Anwendungskennung hinterlegt. Unter Einstellungen →              Konten erneut bei Microsoft anmelden.",
+            "Das Zugriffstoken ist abgelaufen, aber es ist keine \
+             Azure-Anwendungskennung hinterlegt. Unter Einstellungen → \
+             Konten erneut bei Microsoft anmelden.",
         )
     })?;
 
@@ -321,9 +324,9 @@ async fn xbox_live(ms_token: &str) -> Result<XboxResponse> {
         "Properties": {
             "AuthMethod": "RPS",
             "SiteName": "user.auth.xboxlive.com",
-            // Beim Live-Weg wird das Token unveraendert gereicht. Das
-            // Praefix "d=" gehoert zum Azure-Weg und wuerde hier abgelehnt.
-            "RpsTicket": ms_token,
+            // Der Azure-Weg verlangt das Praefix "d="; ohne lehnt Xbox
+            // Live das Token ab.
+            "RpsTicket": format!("d={ms_token}"),
         },
         "RelyingParty": "http://auth.xboxlive.com",
         "TokenType": "JWT",
@@ -536,25 +539,24 @@ mod tests {
     }
 
     #[test]
-    fn anmeldeadresse_nutzt_den_live_weg() {
+    fn anmeldeadresse_nutzt_den_azure_weg() {
         let url = authorize_url("MEINE-KENNUNG");
-        assert!(url.starts_with("https://login.live.com/oauth20_authorize.srf"));
+        assert!(url.starts_with("https://login.microsoftonline.com/consumers/oauth2/v2.0/authorize"));
         assert!(url.contains("client_id=MEINE-KENNUNG"));
         assert!(url.contains("response_type=code"));
         assert!(url.contains("prompt=select_account"), "bei mehreren Konten fragen");
-        // Der alte Geltungsbereich, kodiert.
-        assert!(url.contains("MBI_SSL"));
+        assert!(url.contains("XboxLive.signin%20offline_access"));
     }
 
     #[test]
     fn code_wird_aus_der_rueckleitung_gelesen() {
-        let url = "https://login.live.com/oauth20_desktop.srf?code=M.C123_BAY.abc";
+        let url = "https://login.microsoftonline.com/common/oauth2/nativeclient?code=M.C123_BAY.abc";
         assert_eq!(code_from_redirect(url).unwrap(), "M.C123_BAY.abc");
     }
 
     #[test]
     fn abbruch_ist_kein_fehlschlag_sondern_eine_entscheidung() {
-        let url = "https://login.live.com/oauth20_desktop.srf?error=access_denied";
+        let url = "https://login.microsoftonline.com/common/oauth2/nativeclient?error=access_denied";
         let e = code_from_redirect(url).unwrap_err().to_string();
         assert!(e.contains("abgebrochen"));
     }

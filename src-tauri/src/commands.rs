@@ -832,24 +832,12 @@ fn ms_client_id() -> Result<String> {
 }
 
 #[tauri::command]
-pub fn ms_client_id_status() -> serde_json::Value {
-    let id = crate::ai::keys::ms_client_id();
-    serde_json::json!({
-        "configured": id.is_some(),
-        // Nur der Anfang, damit sich zwei Registrierungen unterscheiden
-        // lassen, ohne den vollen Wert zu zeigen.
-        "hint": id.map(|v| format!("{}…", v.chars().take(8).collect::<String>())),
-        "from_env": std::env::var(crate::ai::keys::MS_ENV_VAR).is_ok(),
-    })
-}
-
-#[tauri::command]
-pub fn set_ms_client_id(client_id: Option<String>) -> Result<()> {
-    crate::ai::keys::store_ms_client_id(client_id.as_deref())
-}
-
-#[tauri::command]
 pub async fn start_device_code_login() -> Result<crate::auth::microsoft::DeviceCodeStart> {
+    if !crate::store::load_config().own_login {
+        return Err(crate::Error::other(
+            "Die eigene Microsoft-Anmeldung ist aus (Einstellungen → Konten). Sie wird erst nach der Freigabe durch Mojang eingeschaltet.",
+        ));
+    }
     crate::auth::microsoft::start_device_code(&ms_client_id()?).await
 }
 
@@ -1066,7 +1054,7 @@ pub async fn start_microsoft_login_webview(app: AppHandle) -> Result<Account> {
 
         if let Ok(here) = current.url() {
             let text = here.as_str();
-            if text.starts_with("https://login.live.com/oauth20_desktop.srf") {
+            if text.starts_with("https://login.microsoftonline.com/common/oauth2/nativeclient") {
                 let result = crate::auth::microsoft::code_from_redirect(text);
                 let _ = current.close();
                 break result?;

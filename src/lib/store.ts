@@ -186,9 +186,26 @@ export const useApp = create<State>((set, get) => ({
   /* Start und Stopp liegen im Store, weil beide Ansichten denselben
      Laufzustand zeigen -- sonst haengt eine davon hinterher. */
   async startInstance(id, join = { kind: "none" }) {
-    /* Der Start läuft immer über den offiziellen Minecraft-Launcher: Profil anlegen, Launcher öffnen.
-       Anmeldung und Spielstart übernimmt er. Ein Beitrittsziel lässt sich so nicht mitgeben. */
+    /* Ohne eigene Anmeldung läuft der Start über den offiziellen Minecraft-Launcher: Profil anlegen,
+       Launcher öffnen, Anmeldung und Spielstart übernimmt er. Ein Beitrittsziel lässt sich so nicht mitgeben.
+       Mit eigener Anmeldung (erst nach Mojangs Freigabe) und einem Microsoft-Konto startet BuildMC selbst. */
     const name = get().instances.find((i) => i.id === id)?.name ?? "Instanz";
+    const selbst = get().config?.own_login && get().accounts.some((a) => a.active && a.account_type !== "offline");
+    if (selbst) {
+      try {
+        await api.launch.start(id, join);
+        await get().reloadRunning();
+        get().notify({
+          kind: "ok",
+          title: `${name} wird gestartet`,
+          detail: join.kind === "server" ? `Verbindet zu ${join.address}` : undefined,
+        });
+      } catch (e) {
+        get().notify({ kind: "risk", title: "Start fehlgeschlagen", detail: String(e) });
+        throw e;
+      }
+      return;
+    }
     try {
       const detail = await api.launch.official(id);
       get().notify({

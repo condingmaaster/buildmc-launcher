@@ -112,7 +112,14 @@ pub fn store_virustotal_key(key: Option<&str>) -> Result<()> {
 
 pub const MS_ENV_VAR: &str = "BUILDMC_MS_CLIENT_ID";
 
-/// Die Anwendungskennung fuer die Microsoft-Anmeldung.
+/// Die von Mojang freigegebene Azure-Anwendung "BuildMC Launcher". Die
+/// Kennung ist kein Geheimnis: sie steht bei jeder Anmeldung offen in der
+/// Adresse. Ein frueher in secrets.json abgelegter Wert wird bewusst nicht
+/// mehr gelesen -- dort stehen bei aelteren Installationen ungueltige IDs.
+const MS_CLIENT_ID: &str = "713f2b78-5e40-4aa2-a127-57b876599ade";
+
+/// Die Anwendungskennung fuer die Microsoft-Anmeldung. Die Umgebungsvariable
+/// bleibt als Ausweg zum Testen einer anderen Registrierung.
 pub fn ms_client_id() -> Option<String> {
     if let Ok(from_env) = std::env::var(MS_ENV_VAR) {
         let trimmed = from_env.trim().to_string();
@@ -120,21 +127,7 @@ pub fn ms_client_id() -> Option<String> {
             return Some(trimmed);
         }
     }
-    load().ms_client_id.filter(|k| !k.trim().is_empty())
-}
-
-/// Legt die Anwendungskennung ab. Ein leerer Wert entfernt sie.
-pub fn store_ms_client_id(id: Option<&str>) -> Result<()> {
-    let path = file()?;
-    paths::ensure_parent(&path)?;
-    let mut secrets = load();
-    secrets.ms_client_id = id
-        .map(str::trim)
-        .filter(|k| !k.is_empty())
-        .map(str::to_string);
-    std::fs::write(&path, serde_json::to_vec_pretty(&secrets)?)?;
-    restrict(&path)?;
-    Ok(())
+    Some(MS_CLIENT_ID.to_string())
 }
 
 /// Legt den Schluessel ab. Ein leerer Wert entfernt ihn.

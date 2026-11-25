@@ -92,7 +92,7 @@ pub struct Config {
     pub security_mode: crate::security::Mode,
     /// Pflichtpruefung vor jedem Start ein- oder ausschalten -- ganz
     /// abschaltbar fuer Nutzer ohne Internetzugang beim Spielen.
-    #[serde(default = "d_true")]
+    #[serde(default)]
     pub security_auto_scan: bool,
 
     /// Welche Spielart beim naechsten Start voreingestellt ist -- der
@@ -100,11 +100,14 @@ pub struct Config {
     /// "java" oder "bedrock".
     #[serde(default = "d_edition")]
     pub default_edition: String,
+
+    /// Eigene Microsoft-Anmeldung statt Übergabe an den offiziellen Launcher.
+    /// Seit der Mojang-Freigabe (0.4.8) standardmäßig an.
+    pub own_login: bool,
 }
 
 fn d_edition() -> String { "java".into() }
 
-fn d_true() -> bool { true }
 
 impl Default for Config {
     fn default() -> Self {
@@ -139,8 +142,9 @@ impl Default for Config {
             ai_fallback_model: crate::ai::client::FALLBACK_MODEL.to_string(),
             assistant_web_research: false,
             security_mode: crate::security::Mode::default(),
-            security_auto_scan: true,
+            security_auto_scan: false,
             default_edition: d_edition(),
+            own_login: true,
         }
     }
 }

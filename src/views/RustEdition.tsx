@@ -20,6 +20,7 @@ import { Icon } from "../components/Icon";
 import { Badge, Button, Empty } from "../components/ui";
 import { ago, playtime } from "../lib/format";
 import type { FabricMod, Progress, RustInstance, RustStatus, RustVariant } from "../lib/types";
+import { DeviceCode, type DeviceLogin } from "./Settings";
 import "./bedrock.css";
 import "./rust.css";
 
@@ -48,6 +49,18 @@ export function RustEdition({ variant }: { variant: RustVariant }) {
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState<string | null>(null);
   const logRef = useRef<HTMLPreElement>(null);
+  // Horizon startet ohne den offiziellen Launcher und braucht darum die eigene Anmeldung.
+  const eigeneAnmeldung = useApp((s) => !!s.config?.own_login);
+  const reloadAccounts = useApp((s) => s.reloadAccounts);
+  const [device, setDevice] = useState<DeviceLogin | null>(null);
+
+  async function anmelden() {
+    try {
+      setDevice(await api.auth.startDevice());
+    } catch (e) {
+      notify({ kind: "risk", title: "Anmeldung nicht möglich", detail: String(e) });
+    }
+  }
 
   const loadStatus = useCallback(() => void api.rust.status(variant).then(setStatus).catch(() => setStatus(null)), [variant]);
   const loadInstances = useCallback(async () => {
@@ -182,8 +195,17 @@ export function RustEdition({ variant }: { variant: RustVariant }) {
 
           {!status.microsoft_account && (
             <p className="bed__note">
-              Startet nur mit einem Microsoft-Konto, dem Minecraft: Java Edition gehört. Anmelden geht wie bei Java
-              über das Konto unten links.
+              {eigeneAnmeldung ? (
+                <>
+                  Startet nur mit einem Microsoft-Konto, dem Minecraft: Java Edition gehört.{" "}
+                  <Button size="sm" tone="primary" icon="plus" onClick={() => void anmelden()}>Mit Microsoft anmelden</Button>
+                </>
+              ) : (
+                <>
+                  Horizon startet ohne den offiziellen Minecraft-Launcher und braucht darum die eigene
+                  Microsoft-Anmeldung. Die ist aus, bis Mojang die Anwendung freigibt (Einstellungen → Konten).
+                </>
+              )}
             </p>
           )}
           {!status.cargo_found && status.source_found && (
@@ -311,6 +333,18 @@ export function RustEdition({ variant }: { variant: RustVariant }) {
           Enthält keine Minecraft-Dateien: die Spieldaten entstehen aus deiner eigenen, gekauften Kopie.
         </p>
       </div>
+      {device && (
+        <DeviceCode
+          start={device}
+          onDone={async (konto) => {
+            setDevice(null);
+            await reloadAccounts();
+            loadStatus();
+            notify({ kind: "ok", title: `Angemeldet als ${konto.username}` });
+          }}
+          onCancel={() => setDevice(null)}
+        />
+      )}
     </>
   );
 }

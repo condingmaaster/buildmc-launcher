@@ -90,7 +90,16 @@ pub fn with_accounts<T>(
     // Ein vergifteter Schalter (nach einem Absturz mitten in f) darf
     // spaetere Aenderungen nicht fuer immer blockieren.
     let _guard = ACCOUNTS_LOCK.lock().unwrap_or_else(|e| e.into_inner());
-    let mut accounts = load_accounts();
+    // Hier nicht load_accounts(): das macht aus einer unlesbaren Datei eine
+    // leere Liste, und das Speichern danach loeschte still alle Konten.
+    let path = paths::accounts_file()?;
+    let mut accounts: Vec<crate::auth::Account> = if path.exists() {
+        read(&path).map_err(|e| {
+            crate::Error::other(format!("{} ist unlesbar ({e}); die Konten bleiben unverändert", path.display()))
+        })?
+    } else {
+        Vec::new()
+    };
     let result = f(&mut accounts)?;
     save_accounts(&accounts)?;
     Ok(result)

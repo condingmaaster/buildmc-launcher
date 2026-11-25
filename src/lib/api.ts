@@ -41,6 +41,8 @@ export const auth = {
   addOffline: (username: string) => call<Account>("add_offline_account", { username }),
   renameOffline: (accountId: string, username: string) =>
                    call<Account>("rename_offline_account", { accountId, username }),
+
+  /** Azure-Anwendungskennung für die eigene Anmeldung (nur ein Anfang wird angezeigt). */
 };
 
 /* ---- Instanzen ------------------------------------------------------- */

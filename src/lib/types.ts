@@ -299,6 +299,8 @@ export interface Config {
   telemetry_overlay?: boolean;
   assistant_web_research?: boolean;
   default_edition?: "java" | "bedrock" | "rust" | "bhh";
+  /** Eigene Microsoft-Anmeldung; aus bis zur Freigabe der App-ID durch Mojang. */
+  own_login?: boolean;
 }
 
 /* ---- Rust-Edition (Horizon) -------------------------------------------- */

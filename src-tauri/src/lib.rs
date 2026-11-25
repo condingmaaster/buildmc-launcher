@@ -88,8 +88,6 @@ pub fn run() {
             commands::set_active_account,
             commands::remove_account,
             commands::rename_offline_account,
-            commands::ms_client_id_status,
-            commands::set_ms_client_id,
             commands::start_device_code_login,
             commands::start_microsoft_login_webview,
             commands::poll_device_code_login,

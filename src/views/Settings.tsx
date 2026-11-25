@@ -48,6 +48,18 @@ function Accounts() {
   const [offlineName, setOfflineName] = useState("");
   const [busy, setBusy] = useState(false);
   const [device, setDevice] = useState<DeviceLogin | null>(null);
+  const config = useApp((s) => s.config);
+  const patch = useApp((s) => s.patchConfig);
+  const eigene = !!config?.own_login;
+
+  async function startMicrosoft() {
+    setBusy(true);
+    try {
+      setDevice(await api.auth.startDevice());
+    } catch (e) {
+      notify({ kind: "risk", title: "Anmeldung nicht möglich", detail: String(e) });
+    } finally { setBusy(false); }
+  }
 
   /* Jede Aenderung muss die Liste neu laden. Ohne das aendert sich an der
      Oberflaeche nichts und die Knoepfe wirken wirkungslos. */
@@ -78,7 +90,9 @@ function Accounts() {
 
       {!accounts.length && (
         <Empty icon="spark" title="Kein Konto"
-               detail="Die Microsoft-Anmeldung passiert im offiziellen Minecraft-Launcher. Hier gibt es nur Offline-Konten." />
+               detail={eigene
+                 ? "Melde dich mit Microsoft an, um auf öffentlichen Servern zu spielen."
+                 : "Die Microsoft-Anmeldung passiert im offiziellen Minecraft-Launcher. Hier gibt es nur Offline-Konten."} />
       )}
 
       <ul className="acc__list">
@@ -110,10 +124,26 @@ function Accounts() {
         ))}
       </ul>
 
+      {eigene ? (
+        <div className="acc__add">
+          <Button tone="primary" icon="plus" busy={busy} onClick={() => void startMicrosoft()}>
+            Microsoft-Konto hinzufügen
+          </Button>
+        </div>
+      ) : (
+        <p className="set__note">
+          Die Microsoft-Anmeldung übernimmt der offizielle Minecraft-Launcher: „Spielen“ legt die Instanz
+          dort als Profil an und öffnet ihn. Melde dich dort einmal an, hier ist nichts einzutragen.
+        </p>
+      )}
+
+      <h2 className="set__h">Eigene Anmeldung</h2>
       <p className="set__note">
-        Die Microsoft-Anmeldung übernimmt der offizielle Minecraft-Launcher: „Spielen“ legt die Instanz
-        dort als Profil an und öffnet ihn. Melde dich dort einmal an, hier ist nichts einzutragen.
+        Mit eigener Anmeldung startet BuildMC Java-Instanzen und die Rust-Edition selbst, ohne den offiziellen
+        Launcher. Ausgeschaltet übernimmt der offizielle Minecraft-Launcher Anmeldung und Start.
       </p>
+      <Row label="Eigene Microsoft-Anmeldung" hint="Aus: Start über den offiziellen Minecraft-Launcher."
+           on={eigene} set={(v) => void patch({ own_login: v })} />
 
       <h2 className="set__h">Offline-Konto</h2>
       <p className="set__note">
@@ -149,7 +179,7 @@ function Accounts() {
 
 /* ---- Microsoft-Anmeldung --------------------------------------------- */
 
-interface DeviceLogin {
+export interface DeviceLogin {
   user_code: string; verification_uri: string; device_code: string; interval: number;
 }
 
@@ -162,7 +192,7 @@ interface DeviceLogin {
  *  meist 5s) und wird bei einem `slow_down` vergroessert -- ein fester,
  *  zu kurzer Abstand kann dazu fuehren, dass Microsoft die Anmeldung
  *  zwischendurch drosselt oder ganz ablehnt. */
-function DeviceCode({ start, onDone, onCancel }: {
+export function DeviceCode({ start, onDone, onCancel }: {
   start: DeviceLogin;
   onDone: (a: Account) => void | Promise<void>;
   onCancel: () => void;
