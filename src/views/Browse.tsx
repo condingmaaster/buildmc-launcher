@@ -21,12 +21,30 @@ const TYPES: { value: ProjectType; label: string }[] = [
   { value: "datapack",     label: "Datapacks" },
 ];
 
+/* "Passend" filtert auf Version und Loader der Zielinstanz, "Alle" sucht
+   ohne diese Filter -- sonst findet man Mods, die (noch) nicht fuer die
+   eigene Version da sind, ueberhaupt nicht. */
+type Scope = "passend" | "alle";
+const SCOPES: { value: Scope; label: string }[] = [
+  { value: "passend", label: "Passend" },
+  { value: "alle",    label: "Alle Versionen" },
+];
+
+/* Passt ein Treffer zur Instanz? Nur fuer den Hinweis im Modus "Alle" --
+   ein leeres Feld vom Portal zaehlt als "unbekannt", nicht als "passt nicht". */
+function fits(r: SearchResult, mc: string, loader: string): boolean {
+  if (r.game_versions.length && !r.game_versions.includes(mc)) return false;
+  if (r.project_type === "shader" || r.project_type === "resourcepack" || r.project_type === "datapack") return true;
+  return !r.loaders.length || r.loaders.includes(loader as SearchResult["loaders"][number]);
+}
+
 export function Browse() {
   const instances = useApp((s) => s.instances);
   const notify = useApp((s) => s.notify);
 
   const [query, setQuery] = useState("");
   const [type, setType] = useState<ProjectType>("mod");
+  const [scope, setScope] = useState<Scope>("passend");
   const [target, setTarget] = useState<string>(instances[0]?.id ?? "");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [total, setTotal] = useState(0);
@@ -47,11 +65,14 @@ export function Browse() {
   useEffect(() => { void api.ai.status().then(setAi).catch(() => setAi(null)); }, []);
 
   const inst = instances.find((i) => i.id === target);
+  const alle = scope === "alle";
+  const mcFilter = alle ? null : inst?.mc_version ?? null;
+  const loaderFilter = alle || type === "shader" ? null : inst?.loader ?? null;
 
   /* Ein neuer Suchbegriff, Inhaltstyp oder Ziel faengt wieder bei Seite 0
      an -- sonst stuende man nach dem Umschalten mitten in einer Trefferliste,
      die es fuer die neue Suche vielleicht gar nicht mehr gibt. */
-  useEffect(() => { setPage(0); }, [query, type, inst?.mc_version, inst?.loader]);
+  useEffect(() => { setPage(0); }, [query, type, mcFilter, loaderFilter]);
 
   /* Eingabe entprellen: erst 280 ms nach dem letzten Tastendruck suchen.
      Das haelt die Trefferliste ruhig und spart Anfragen. Seite wechseln
@@ -63,13 +84,13 @@ export function Browse() {
     setLoading(true);
     timer.current = window.setTimeout(() => {
       void api.mods
-        .search(query, inst?.mc_version ?? null, type === "shader" ? null : inst?.loader ?? null, type, page)
+        .search(query, mcFilter, loaderFilter, type, page)
         .then((r) => { if (!cancelled) { setResults(r.results); setTotal(r.total); } })
         .catch(() => { if (!cancelled) { setResults([]); setTotal(0); } })
         .finally(() => { if (!cancelled) setLoading(false); });
     }, 280);
     return () => { cancelled = true; window.clearTimeout(timer.current); };
-  }, [query, type, inst?.mc_version, inst?.loader, page]);
+  }, [query, type, mcFilter, loaderFilter, page]);
 
   async function install(r: SearchResult) {
     if (!inst) {
@@ -80,7 +101,11 @@ export function Browse() {
     try {
       const versions = await api.mods.versions(r.project_id, inst.mc_version, r.project_type === "shader" ? null : inst.loader, r.provider);
       const best = versions.find((v) => v.release_type === "release") ?? versions[0];
-      if (!best) throw new Error("Keine passende Version");
+      if (!best) {
+        notify({ kind: "warn", title: `${r.title}: keine passende Version`,
+                 detail: `Für ${inst.mc_version}${r.project_type === "shader" ? "" : ` · ${inst.loader}`} gibt es keine Datei. Wähle eine andere Instanz als Ziel.` });
+        return;
+      }
 
       if (r.project_type === "shader") {
         await api.mods.installShader(inst.id, best.version_id);
@@ -167,7 +192,10 @@ export function Browse() {
 
       <div className="browse__filters">
         <Segmented label="Inhaltstyp" value={type} onChange={setType} options={TYPES} />
-        {inst && (
+        <Segmented label="Versionen" value={scope} onChange={setScope} options={SCOPES} />
+        {alle ? (
+          <span className="browse__scope">ohne Versions- und Loader-Filter</span>
+        ) : inst && (
           <span className="browse__scope">
             {type === "shader" ? "Shaderpakete für " : "gefiltert auf "}
             <strong>{inst.mc_version}</strong>
@@ -250,6 +278,11 @@ export function Browse() {
                   <span><Icon name="download" size={12} />{compact(r.downloads)}</span>
                   <span><Icon name="clock" size={12} />{ago(r.updated_at)}</span>
                   {r.server_side === "required" && <Badge>serverseitig</Badge>}
+                  {alle && inst && !fits(r, inst.mc_version, inst.loader) && (
+                    <Badge tone="warn" title={`Laut Portal nicht für ${inst.name}`}>
+                      nicht für {inst.mc_version}
+                    </Badge>
+                  )}
                 </div>
 
                 <div className="card__actions">

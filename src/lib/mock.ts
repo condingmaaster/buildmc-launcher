@@ -460,6 +460,8 @@ const handlers: Record<string, (a: any) => unknown> = {
     available_versions: BEDROCK_VERSIONS.length,
   }),
   bedrock_open_ui: () => undefined,
+  rust_list_instances: () => [],
+  rust_running: () => [],
   bedrock_list_versions: () => BEDROCK_VERSIONS,
   bedrock_list_instances: () => BEDROCK_INSTANCES,
   bedrock_create_instance: ({ name, versionDirName }: { name: string; versionDirName: string }) => {
