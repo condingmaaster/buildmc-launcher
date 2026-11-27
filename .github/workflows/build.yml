@@ -4,6 +4,11 @@ name: Build installers
 # Start: push a tag like v0.4.3, or Actions -> Run workflow (then the files appear as workflow artifacts and in a draft release).
 on:
   workflow_dispatch:
+    inputs:
+      nur_msix:
+        description: "Nur das Store-Paket (.msix) bauen, keine Installer und kein Release"
+        type: boolean
+        default: false
   push:
     tags: ["v*"]
 
@@ -12,6 +17,7 @@ permissions:
 
 jobs:
   build:
+    if: ${{ !inputs.nur_msix }}
     strategy:
       fail-fast: false
       matrix:
@@ -45,3 +51,54 @@ jobs:
           releaseName: BuildMC Launcher v__VERSION__
           releaseDraft: ${{ github.ref_type != 'tag' }}
           args: ${{ matrix.args }}
+
+  # Store-Paket (.msix) fuer das Microsoft Partner Center. Unsigniert --
+  # der Store signiert beim Einreichen selbst. Liegt danach als
+  # Workflow-Artefakt "msix" am Lauf, nicht am Release: unsigniert laesst
+  # es sich ausserhalb des Stores nicht installieren.
+  msix:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+          key: store
+      - run: npm ci
+      - name: Build (Store-Fassung)
+        env:
+          BUILDMC_STORE: "1"
+        run: npx tauri build --no-bundle
+      - name: Pack MSIX
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $id = Get-Content src-tauri/msix/identity.json -Raw | ConvertFrom-Json
+          if (-not $id.name -or -not $id.publisher -or -not $id.publisherDisplayName) {
+            throw "src-tauri/msix/identity.json ist unvollstaendig (Werte aus Partner Center -> Produktidentitaet)"
+          }
+          $version = (Get-Content src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).version + ".0"
+          $root = "msix-root"
+          New-Item -ItemType Directory -Force $root | Out-Null
+          Copy-Item src-tauri/target/release/buildmc-launcher.exe $root
+          Copy-Item -Recurse src-tauri/rust-editions "$root/rust-editions"
+          Copy-Item -Recurse src-tauri/msix/Assets "$root/Assets"
+          (Get-Content src-tauri/msix/AppxManifest.xml -Raw) `
+            -replace "__NAME__", $id.name `
+            -replace "__PUBLISHER__", [System.Security.SecurityElement]::Escape($id.publisher) `
+            -replace "__PUBLISHER_DISPLAY__", [System.Security.SecurityElement]::Escape($id.publisherDisplayName) `
+            -replace "__VERSION__", $version |
+            Set-Content -Encoding utf8 "$root/AppxManifest.xml"
+          $makeappx = Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\bin\*\x64\makeappx.exe" |
+            Sort-Object FullName -Descending | Select-Object -First 1
+          & $makeappx.FullName pack /d $root /p "BuildMC_Launcher_${version}_x64.msix" /o
+          if ($LASTEXITCODE -ne 0) { throw "makeappx fehlgeschlagen" }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: msix
+          path: "*.msix"

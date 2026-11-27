@@ -990,6 +990,11 @@ pub fn import_foreign_instance(path: String) -> Result<InstanceConfig> {
 
 #[tauri::command]
 pub async fn check_for_update() -> Result<Option<crate::update::UpdateInfo>> {
+    // Die Store-Fassung (BUILDMC_STORE beim Bauen gesetzt) aktualisiert der
+    // Microsoft Store; ein eigener Hinweis auf GitHub-Pakete waere dort falsch.
+    if option_env!("BUILDMC_STORE").is_some() {
+        return Ok(None);
+    }
     let config = crate::store::load_config();
     let found = crate::update::check(env!("CARGO_PKG_VERSION"), false).await?;
 
